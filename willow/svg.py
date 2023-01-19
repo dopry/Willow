@@ -193,10 +193,19 @@ class SvgWrapper:
             return self._parse_view_box(attr_value)
 
     def _parse_view_box(self, raw_value):
-        match = self.VIEW_BOX_RE.match(raw_value.strip())
-        if match is None:
-            raise SvgViewBoxParseError(f"Unable to parse viewBox value '{raw_value}'")
-        return ViewBox(*map(float, match.groups()))
+        values = re.split(r"[, ]", raw_value.strip())
+        if len(values) != 4:
+            raise SvgViewBoxParseError(
+                f"Unable to parse viewBox value '{raw_value}', expected 4 values separated by commas or spaces"
+            )
+
+        try:
+            minx, miny, width, height = map(float, values)
+        except ValueError as err:
+            raise SvgViewBoxParseError(
+                f"Unable to parse viewBox value '{raw_value}', expected 4 numbers"
+            ) from err
+        return ViewBox(minx, miny, width, height)
 
     def set_root_attr(self, attr, value):
         self.root.set(attr, str(value))
