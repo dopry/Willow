@@ -157,26 +157,26 @@ class SvgWrapper:
         elif self.view_box is not None:
             return self.view_box.height
 
-    def _parse_size(self, raw_value):
+    def _parse_size(self, raw_value, basis=None):
+        """
+        basis is the basis for % units (e.g. 100% of the basis)
+        """
         clean_value = raw_value.strip()
         match = self.UNIT_RE.search(clean_value)
-        unit = clean_value[match.start() :] if match else None
+        unit = clean_value[match.start() :] if match else None  # noqa E203
 
-        if unit == "%":
-            raise InvalidSvgSizeAttribute(
-                f"Unable to handle relative size units ({raw_value})"
-            )
+        if unit == "%" and basis is None:
+            raise InvalidSvgSizeAttribute(f"Unable to handle relative size units ({raw_value})")
 
         amount_raw = clean_value[: -len(unit)] if unit else clean_value
         try:
             amount = float(amount_raw)
         except ValueError as err:
-            raise InvalidSvgSizeAttribute(
-                f"Unable to parse value from '{raw_value}'"
-            ) from err
+            raise InvalidSvgSizeAttribute(f"Unable to parse value from '{raw_value}'") from err
         if amount <= 0:
             raise InvalidSvgSizeAttribute(f"Negative or 0 sizes are invalid ({amount})")
-
+        if unit == "%":
+            return amount / 100 * basis
         if unit is None or unit == "px":
             return amount
         elif unit == "em":
